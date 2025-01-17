@@ -5,11 +5,12 @@ import sys
 from datetime import datetime
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles  # FIXED: Move import here
 from sqlalchemy import create_engine, Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from fastapi.staticfiles import StaticFiles
 
+# --- Configure Database ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
@@ -23,13 +24,24 @@ if DATABASE_URL.startswith("postgres://"):
 # Debugging: Print DATABASE_URL
 print("✅ DATABASE_URL Loaded:", DATABASE_URL)
 
+# Create SQLAlchemy Engine
 engine = create_engine(DATABASE_URL)
 
 # Session handling
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+# --- FastAPI App ---
+app = FastAPI()
 
+# Serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Ensure tables are created at startup
+@app.on_event("startup")
+def startup():
+    print("✅ Creating tables if they don't exist...")
+    Base.metadata.create_all(bind=engine)
 
 # Dependency to get the database session
 def get_db():
@@ -39,19 +51,9 @@ def get_db():
     finally:
         db.close()
 
-# --- FastAPI App ---
-app = FastAPI()
-
-
-# Serve static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-# Ensure tables are created when the app starts
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
 # --- Database Model ---
 class Event(Base):
-    __tablename__ = "clicks"  # Keep your existing table name
+    __tablename__ = "clicks"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, nullable=False, index=True)
