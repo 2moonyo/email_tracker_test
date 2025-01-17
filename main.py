@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import create_engine, Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from fastapi.staticfiles import StaticFiles
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -28,10 +29,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Ensure tables are created when the app starts
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
+
 
 # Dependency to get the database session
 def get_db():
@@ -44,6 +42,13 @@ def get_db():
 # --- FastAPI App ---
 app = FastAPI()
 
+
+# Serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+# Ensure tables are created when the app starts
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 # --- Database Model ---
 class Event(Base):
     __tablename__ = "clicks"  # Keep your existing table name
