@@ -9,11 +9,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
 # --- Configure Database ---
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://click_test_user:pOkBXHEqhwFbXmHdWn3cp31tmGSSnO7S@my-db.render.com:5432/click_test")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Ensure compatibility with old PostgreSQL URL formats
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+
+print("DATABASE_URL:", os.getenv("DATABASE_URL"))
 
 # Create the database engine
 engine = create_engine(DATABASE_URL)
