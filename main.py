@@ -1,6 +1,7 @@
 import os
 import base64
 import logging
+import sys
 from datetime import datetime
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
@@ -8,21 +9,29 @@ from sqlalchemy import create_engine, Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-# --- Configure Database ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Ensure compatibility with old PostgreSQL URL formats
+if not DATABASE_URL:
+    print("❌ ERROR: `DATABASE_URL` is not set. Please check Render's environment variables.")
+    sys.exit(1)
+
+# Convert old `postgres://` to `postgresql://`
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
-print("DATABASE_URL:", os.getenv("DATABASE_URL, connect_args={"check_same_thread": False})"))
+# Debugging: Print DATABASE_URL
+print("✅ DATABASE_URL Loaded:", DATABASE_URL)
 
-# Create the database engine
 engine = create_engine(DATABASE_URL)
 
 # Session handling
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# Ensure tables are created when the app starts
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 
 # Dependency to get the database session
 def get_db():
@@ -44,9 +53,6 @@ class Event(Base):
     ip = Column(String, nullable=False)
     event_type = Column(String, nullable=False)  # 'open' or 'click'
     timestamp = Column(DateTime, default=datetime.utcnow)
-
-# Create the table in PostgreSQL
-Base.metadata.create_all(bind=engine)
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO)
