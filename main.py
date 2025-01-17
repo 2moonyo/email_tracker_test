@@ -15,7 +15,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
-print("DATABASE_URL:", os.getenv("DATABASE_URL"))
+print("DATABASE_URL:", os.getenv("DATABASE_URL, connect_args={"check_same_thread": False})"))
 
 # Create the database engine
 engine = create_engine(DATABASE_URL)
